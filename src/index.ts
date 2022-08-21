@@ -1,6 +1,7 @@
 import { Socket, createSocket, RemoteInfo } from 'node:dgram'
 import * as JSSalsa20  from 'js-salsa20'
 import { TextEncoder, TextDecoder } from 'util';
+import { gt7parser } from './parser';
 // import { createWriteStream, readFileSync } from 'fs';
 //
 // const data: Buffer = readFileSync('./gt-data.txt');
@@ -31,15 +32,19 @@ socket.on('message', (data: Buffer, rinfo: RemoteInfo) => {
     console.log(`server got: ${data.length} from ${rinfo.address}:${rinfo.port}`);
 
     if (0x128 === data.length) {
-        const packet: any = decrypt(data);
+        const packet: Buffer = decrypt(data);
 
         const magic = packet.readInt32LE();
-        if (magic != 0x47375330) // 0S7G - G7S0
-            console.log('Magic! error!', magic);
+        if (magic != 0x47375330) {
+            // 0S7G - G7S0
+            console.log("Magic! error!", magic);
+        } else {
+            const message = gt7parser.parse(packet);
 
-        console.log('Track Position:')
-        console.log('TODO :D')
-    }
+            console.clear();
+            console.log(message);
+        }
+      }
 });
 
 socket.on('listening', () => {
