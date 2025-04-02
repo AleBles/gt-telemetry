@@ -1,7 +1,7 @@
 import { Socket, createSocket, RemoteInfo } from 'node:dgram'
 import * as JSSalsa20  from 'js-salsa20'
 import { TextEncoder, TextDecoder } from 'util';
-import { gt7parser } from './parser';
+import { gt7parser } from './server/Gt7Parser';
 // import { createWriteStream, readFileSync } from 'fs';
 //
 // const data: Buffer = readFileSync('./gt-data.txt');
@@ -21,7 +21,7 @@ import { gt7parser } from './parser';
 const socket: Socket = createSocket('udp4');
 const bindPort: number = 33740;
 const receivePort: number = 33739;
-const psIp: string = '192.168.0.133';
+const psIp: string = '192.168.0.111';
 
 socket.on('error', (err) => {
     console.log(`server error:\n${err.stack}`);
@@ -42,7 +42,11 @@ socket.on('message', (data: Buffer, rinfo: RemoteInfo) => {
             const message = gt7parser.parse(packet);
 
             console.clear();
-            console.log(message);
+            console.log([
+                'throtle', message.throttle,
+                'brake', message.brake,
+                'gear',message.currentGear,
+            ]);
         }
       }
 });
