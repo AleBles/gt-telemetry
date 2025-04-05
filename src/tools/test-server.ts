@@ -1,7 +1,7 @@
 import { Socket, createSocket, RemoteInfo } from 'node:dgram'
-import * as JSSalsa20  from 'js-salsa20'
-import { TextEncoder, TextDecoder } from 'util';
-import { gt7parser } from './server/Gt7Parser';
+import { decryptBuffer} from "../server/Utils";
+import { gt7parser } from '../server/Gt7Parser';
+
 // import { createWriteStream, readFileSync } from 'fs';
 //
 // const data: Buffer = readFileSync('./gt-data.txt');
@@ -32,7 +32,7 @@ socket.on('message', (data: Buffer, rinfo: RemoteInfo) => {
     console.log(`server got: ${data.length} from ${rinfo.address}:${rinfo.port}`);
 
     if (0x128 === data.length) {
-        const packet: Buffer = decrypt(data);
+        const packet: Buffer = decryptBuffer(data);
 
         const magic = packet.readInt32LE();
         if (magic != 0x47375330) {
@@ -66,27 +66,3 @@ socket.send(Buffer.from('A'),0, 1, receivePort, psIp, (err) => {
 
     console.log('data send!');
 });
-
-/**
- * This works!
- * @param data
- */
-function decrypt(data: Buffer): Buffer {
-    const encoder: TextEncoder = new TextEncoder();
-    const key: Uint8Array = encoder.encode('Simulator Interface Packet GT7 ver 0.0'); // 32 bytes key
-
-    const nonce1: number = data.readInt32LE(64);
-    const nonce2: number = nonce1 ^ 0xDEADBEAF;
-
-    const nonce: Buffer = new Buffer(8);
-    nonce.writeInt32LE(nonce2)
-    nonce.writeInt32LE(nonce1, 4)
-
-    const message: Uint8Array = new JSSalsa20(key.slice(0, 32), nonce).decrypt(data);
-
-    const newBuffer: Buffer = new Buffer(message.byteLength)
-    for (var i = 0; i < message.length; i++)
-        newBuffer[i] = message[i];
-
-    return newBuffer;
-}

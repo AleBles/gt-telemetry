@@ -2,19 +2,43 @@ import { WebSocket, Server as WebSocketServer } from "ws";
 import { PlaystationSocket } from "./PlaystationSocket";
 import { MessageType } from "./Message";
 import { GT7Data } from "./Gt7Data";
+import yargs from 'yargs/yargs';
+import { hideBin } from 'yargs/helpers';
+import { MockServer } from './MockSocket';
 
 // Configuration
 const WS_PORT = 9191;
 
+// Parse command line arguments
+const argv = yargs(hideBin(process.argv)).option('mode', {
+    alias: 'm',
+    description: 'Set the mode of the server',
+    choices: ['playstation', 'local'],
+    default: 'playstation'
+}).option('logFilePath', {
+    alias: 'l',
+    description: 'Set the log file path for the MockServer',
+    type: 'string',
+    default: null
+}).argv;
+
 // Create WebSocket server
 const server: WebSocketServer = new WebSocketServer({ port: WS_PORT });
+
+// Determine which socket to use based on the mode
+let psSocket: PlaystationSocket | MockServer;
+if (argv.mode === 'local') {
+    console.log("Using local server");
+    psSocket = new MockServer(argv.logFilePath);
+} else {
+    console.log("Using PlayStation server");
+    psSocket = new PlaystationSocket();
+}
 
 console.log(`WebSocket server started on ws://localhost:${WS_PORT}`);
 
 server.on("connection", (clientConnection) => {
     console.log("New WebSocket client connected.");
-
-    let psSocket: PlaystationSocket | null = null;
 
     clientConnection.on("message", (message) => {
         try {
@@ -28,7 +52,7 @@ server.on("connection", (clientConnection) => {
                 if (!psSocket) {
                    //Only create PS socket when non existing, allowing the frontend to connect multiple times
                     // Create a new UDP client
-                    psSocket = new PlaystationSocket(host)
+                    psSocket.connect(host)
                 }
 
                 /**

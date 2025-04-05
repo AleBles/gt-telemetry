@@ -1,6 +1,6 @@
 import React, { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
-import { Message, MessageType } from "../server/Message";
-import { GT7Data } from "../server/Gt7Data";
+import { Message, MessageType } from "../../server/Message";
+import { GT7Data } from "../../server/Gt7Data";
 
 type Listener = (data: any) => void;
 

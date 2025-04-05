@@ -3,7 +3,7 @@ import ThemeButton from "../ui/theme-button";
 import {useSocket} from "../contexts/socket-context";
 import { useNavigate } from "react-router-dom";
 import { toast, Id as ToastId } from "react-toastify";
-import { MessageType } from "../server/Message";
+import { MessageType } from "../../server/Message";
 
 const Login = () => {
     const {connect, subscribe, unsubscribe} = useSocket();
