@@ -2,18 +2,33 @@ import React, { useState } from 'react';
 import ThemeButton from "../ui/theme-button";
 import {useSocket} from "../contexts/socket-context";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, Id as ToastId } from "react-toastify";
+import { MessageType } from "../server/Message";
 
 const Login = () => {
-    const {connect} = useSocket();
+    const {connect, subscribe, unsubscribe} = useSocket();
     const [url, setUrl] = useState("127.0.0.1");
     const navigate = useNavigate();
 
     const handleConnect = () => {
-        toast.info("Connecting to server...");
-        connect(url, () => {
-            // navigate("/dash");
-        }); // Connect to WebSocket with the remote address
+        const connecToastId: ToastId = toast.info("Connecting to local server...");
+
+        subscribe(MessageType.error, (message: string) => {
+            toast.error(message)
+        })
+
+        // Connect to WebSocket with the remote address
+        connect(url)
+            .then(()=> {
+                toast.dismiss(connecToastId);
+
+                toast.info("Connected! Connecting to Playstation...");
+            })
+            .catch((err) => {
+                toast.dismiss(connecToastId);
+
+                toast.error(err);
+            });
     };
 
     return (

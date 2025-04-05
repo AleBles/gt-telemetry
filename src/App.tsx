@@ -6,6 +6,7 @@ import './App.css';
 import Login from './pages/Login'
 import { DashboardProvider } from "./contexts/dashboard-context";
 import { ToastContainer } from "react-toastify";
+import NavBar from "./ui/top-bar";
 
 function App() {
     return (

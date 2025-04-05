@@ -1,15 +1,15 @@
-import React, { ReactNode, useEffect, createContext, useState, useContext } from 'react';
-import { toast } from 'react-toastify';
-import { useNavigate } from "react-router-dom";
-import { MessageType } from "../server/messages/MessageType";
-import { Connect } from "../server/messages/Connect";
+import React, { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
+import { Message, MessageType } from "../server/Message";
+import { GT7Data } from "../server/Gt7Data";
+
+type Listener = (data: any) => void;
 
 interface WebSocketContextType {
-    ws: WebSocket | null;
-    messages: string[];
-    connect: (url: string, callback: () => void) => void; // Method to connect to WebSocket with a URL
+    connect: (url: string) => Promise<string>; // Method to connect to WebSocket with a URL
     sendMessage: (message: string) => void; // Method to send a message through WebSocket
-    onError: (error: Error) => void;
+    onError: (error: string) => void;
+    subscribe: (event: string, callback: Listener) => void;
+    unsubscribe: (event: string, callback: Listener) => void;
 }
 
 // Define the props for the WebSocketProvider, including children as ReactNode
@@ -20,60 +20,72 @@ interface WebSocketProviderProps {
 const SocketContext = createContext<WebSocketContextType | null>(null);
 
 export const SocketProvider: React.FC<WebSocketProviderProps> = ({ children = {} }) => {
-    const [ws, setWs] = useState(null);
-    const [messages, setMessages] = useState([]);
-    const [error, onError] = useState(null);
+    const socketRef = useRef<WebSocket | null>(null);
+    const listeners = useRef<Record<string, Listener[]>>({});
 
-    const connect = (url: string, callback: () => void) => {
-        if (ws) {
-            // Close the existing connection if it exists before creating a new one
-            ws.close();
-        }
+    const connect = (url: string, promise) => {
+        return new Promise((resolve, reject) => {
+            socketRef.current = new WebSocket('ws://127.0.0.1:9191');
 
-        const socket = new WebSocket('ws://127.0.0.1:9191');
+            socketRef.current.onopen = () => {
+                resolve("✅ Connected to WebSocket: " + url)
+                socketRef.current.send(JSON.stringify({ type: MessageType.connect, address: url }));
+            };
 
-        socket.onopen = () => {
-            console.log("✅ Connected to WebSocket:", url);
-            socket.send(JSON.stringify({ type: MessageType.connect, address: url }));
-        };
+            socketRef.current.onmessage = (event) => {
+                console.log(event);
+                const message: Message = JSON.parse(event.data);
 
-        socket.onmessage = (event) => {
-            console.log( event.data);
-            setMessages((prev) => [...prev, event.data]);
-        };
+                switch (message.type) {
+                    case MessageType.error:
+                        listeners.current[message.type]?.forEach((callback: (data: string) => void) => callback("Unable to connect to PlayStation"));
+                        break;
+                    case MessageType.data:
+                        listeners.current[message.type]?.forEach((callback: (data: GT7Data) => void) => callback(message.data as GT7Data));
+                        break;
+                }
+            };
 
-        socket.onclose = () => {
-            console.log("❌ WebSocket Closed");
-        };
+            socketRef.current.onclose = () => {
+                reject("❌ WebSocket Closed");
+            };
 
-        socket.onerror = (e) => {
-            onError(e);
-        };
-
-        setWs(socket);
+            socketRef.current.onerror = (e) => {
+                reject("Unable to connect to local server");
+            };
+        });
     };
 
     const sendMessage = (message: string) => {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(message);
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
+            socketRef.current.send(message);
         } else {
             console.error("⚠️ WebSocket is not connected.");
         }
     };
 
+    const subscribe = (event: string, callback: Listener) => {
+        if (!listeners.current[event]) {
+            listeners.current[event] = [];
+        }
+        listeners.current[event].push(callback);
+    };
+
+    const unsubscribe = (event: string, callback: Listener) => {
+        listeners.current[event] = listeners.current[event]?.filter(cb => cb !== callback) || [];
+    };
+
     // Cleanup on unmount (closes WebSocket connection if open)
     useEffect(() => {
         return () => {
-            if (ws) {
-                ws.close();
-            }
+            socketRef.current?.close();
         };
-    }, [ws]);
+    });
 
     return (
         <SocketContext.Provider
             value={{
-                ws, messages, connect, sendMessage, onError
+                unsubscribe, subscribe, connect, sendMessage
             }}
         >
             {children}

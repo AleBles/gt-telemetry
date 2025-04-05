@@ -1,7 +1,6 @@
 import { WebSocket, Server as WebSocketServer } from "ws";
 import { PlaystationSocket } from "./PlaystationSocket";
-import { MessageType } from "./messages/MessageType";
-import { Connect } from "./messages/Connect";
+import { MessageType } from "./Message";
 import { GT7Data } from "./Gt7Data";
 
 // Configuration
@@ -22,7 +21,7 @@ server.on("connection", (clientConnection) => {
             const data = JSON.parse(message.toString());
 
             if (data.type === MessageType.connect) {
-                const host = (<Connect>data).address;
+                const host = data.address;
 
                 console.log(`Connecting to PlayStation at ${host}`);
 
@@ -40,7 +39,7 @@ server.on("connection", (clientConnection) => {
 
                     // Forward UDP data to the WebSocket client
                     if (clientConnection.readyState === clientConnection.OPEN) {
-                        clientConnection.send(JSON.stringify(msg));
+                        clientConnection.send(JSON.stringify({type:MessageType.data ,data:msg}));
                     }
                 });
 
@@ -50,18 +49,18 @@ server.on("connection", (clientConnection) => {
                 psSocket.on("connect", (err) => {
                     // Forward UDP data to the WebSocket client
                     if (clientConnection.readyState === clientConnection.OPEN) {
-                        clientConnection.send("We are connected!");
+                        clientConnection.send(JSON.stringify({type: MessageType.connect, data: "We are connected!"}));
                     }
                 })
 
                 psSocket.on("disconnect", (err) => {
-                    clientConnection.send("Playstation disconnected");
+                    clientConnection.send(JSON.stringify({type: MessageType.error, data: "Playstation disconnected"}));
 
                     clientConnection.close();
                 })
 
                 psSocket.on('error', () => {
-                    clientConnection.send("Unable to connect to Playstation");
+                    clientConnection.send(JSON.stringify({type:MessageType.error ,data:"Unable to connect to Playstation"}));
 
                     clientConnection.close();
                 });

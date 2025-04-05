@@ -5,7 +5,9 @@ import { useDashboard } from "../contexts/dashboard-context";
 
 import VelocityMeter from '../race-components/velocity-meter'; // Use the earlier example
 import GasBrakeMeter from '../race-components/gas-brake-meter'; // Placeholder for your gas/brake component
-import GForceMeter from '../race-components/gforce-meter'; // Placeholder for G forces
+import GForceMeter from '../race-components/gforce-meter';
+import RPMGauge from "../race-components/rpm-gauge";
+import NavBar from "../ui/top-bar"; // Placeholder for G forces
 
 const Dashboard = () => {
     const {
@@ -38,6 +40,7 @@ const Dashboard = () => {
             <VelocityMeter velocity={velocity} />
             <GasBrakeMeter gas={gasBrakeUsage.gas} brake={gasBrakeUsage.brake} />
             <GForceMeter gForces={gForces} />
+            <RPMGauge rpm={4500} maxRPM={8000} />
             {/* You can add more metrics here */}
         </div>
     );
