@@ -10,7 +10,7 @@ const VelocityMeter = () => {
 
     useEffect(() => {
         subscribe(MessageType.data, (data: GT7Data) => {
-            setVelocity(data.metersPerSecond * 3.6);
+            setVelocity(data.metersPerSecond * 3.6 | 0);
         })
 
         return () => {
