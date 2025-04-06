@@ -32,16 +32,18 @@ export const SocketProvider: React.FC<WebSocketProviderProps> = ({ children = {}
                 socketRef.current.send(JSON.stringify({ type: MessageType.connect, address: url }));
             };
 
-            socketRef.current.onmessage = (event) => {
-                console.log(event);
-                const message: Message = JSON.parse(event.data);
+            socketRef.current.onmessage = (event: any) => {
+                const message: any = JSON.parse(event.data);
 
                 switch (message.type) {
                     case MessageType.error:
                         listeners.current[message.type]?.forEach((callback: (data: string) => void) => callback("Unable to connect to PlayStation"));
                         break;
+                    case MessageType.connect:
+                        listeners.current[message.type]?.forEach((callback: (data: string) => void) => callback("Connected to PlayStation!"));
+                        break;
                     case MessageType.data:
-                        listeners.current[message.type]?.forEach((callback: (data: GT7Data) => void) => callback(message.data as GT7Data));
+                        listeners.current[message.type]?.forEach((callback: (data: GT7Data) => void) => callback(JSON.parse(message.data) as GT7Data));
                         break;
                 }
             };

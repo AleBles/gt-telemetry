@@ -11,10 +11,23 @@ const Login = () => {
     const navigate = useNavigate();
 
     const handleConnect = () => {
-        const connecToastId: ToastId = toast.info("Connecting to local server...");
+        let connecToastId: ToastId = toast.info("Connecting to local server...");
 
         subscribe(MessageType.error, (message: string) => {
+            toast.dismiss(connecToastId);
+
             toast.error(message)
+        })
+
+        subscribe(MessageType.connect, (message: string) => {
+            toast.dismiss(connecToastId);
+
+            connecToastId = toast.info("Connected to Playstation! Redirecting..")
+
+            setTimeout(() => {
+                toast.dismiss(connecToastId);
+                navigate('/dash')
+            }, 700)
         })
 
         // Connect to WebSocket with the remote address
@@ -22,7 +35,7 @@ const Login = () => {
             .then(()=> {
                 toast.dismiss(connecToastId);
 
-                toast.info("Connected! Connecting to Playstation...");
+                connecToastId = toast.info("Connected! Connecting to Playstation...");
             })
             .catch((err) => {
                 toast.dismiss(connecToastId);

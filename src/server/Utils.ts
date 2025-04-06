@@ -1,5 +1,5 @@
 import { TextEncoder } from "util";
-import * as JSSalsa20  from 'js-salsa20';
+import JSSalsa20  from 'js-salsa20';
 
 export const decryptBuffer = (data: Buffer): Buffer => {
     const encoder: TextEncoder = new TextEncoder();

@@ -1,20 +1,30 @@
 import React, { useEffect, useState } from "react";
 import { Gauge } from "tabler-icons-react";
 import { motion } from "framer-motion";
+import { MessageType } from "../../server/Message";
+import { GT7Data } from "../../server/Gt7Data";
+import { useSocket } from "../contexts/socket-context";
 
 interface RPMGaugeProps {
     rpm: number; // Current RPM value
     maxRPM?: number; // Maximum RPM value (default 8000)
 }
-
 export default function RPMGauge({ rpm, maxRPM = 8000 }: RPMGaugeProps) {
     const [animatedRPM, setAnimatedRPM] = useState(0);
+    const [rpmPercentage, setRpmPercentage] = useState(0);
+    const {subscribe, unsubscribe} = useSocket();
 
     useEffect(() => {
-        setAnimatedRPM(rpm);
+        subscribe(MessageType.data, (data: GT7Data) => {
+            setAnimatedRPM(data.engineRPM);
+            setRpmPercentage((animatedRPM / maxRPM) * 100);
+        })
+
+        return () => {
+            // TODO: sunbsubscribe
+        }
     }, [rpm]);
 
-    const rpmPercentage = (animatedRPM / maxRPM) * 100;
 
     return (
         <div className="flex flex-col items-center p-4 bg-gray-900 text-white rounded-2xl shadow-lg w-64">
@@ -30,7 +40,7 @@ export default function RPMGauge({ rpm, maxRPM = 8000 }: RPMGaugeProps) {
             >
                 <div className="h-full bg-red-500"></div>
             </motion.div>
-            <p className="mt-2 text-xl font-bold">{animatedRPM.toLocaleString()} RPM</p>
+            <p className="mt-2 text-xl font-bold">{animatedRPM} RPM</p>
         </div>
     );
 }

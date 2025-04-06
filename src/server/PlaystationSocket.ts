@@ -32,8 +32,9 @@ export class PlaystationSocket extends EventEmitter {
             console.log(`server got: ${buffer.length} from ${rinfo.address}:${rinfo.port}`);
 
             if (this.timer) {
-                this.emit('connect', rinfo.address, rinfo.port);
+                this.timer = null;
                 clearTimeout(this.timer);
+                this.emit('connect', rinfo.address, rinfo.port);
             }
 
             if (0x128 === buffer.length) {

@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const logName = 'playstation_messages.log';
+const logName = '../../data/playstation_messages.log';
 
 export class MockServer extends EventEmitter {
     private isConnected: boolean = false;
@@ -10,6 +10,7 @@ export class MockServer extends EventEmitter {
 
     constructor(logFileName: string = logName) {
         super();
+        console.log(logFileName);
         this.logFilePath = path.join(__dirname, logFileName);
     }
 
@@ -27,27 +28,49 @@ export class MockServer extends EventEmitter {
         this.startReadingLog();
     }
 
-    private startReadingLog(): void {
-        const readLog = () => {
-            fs.readFile(this.logFilePath, 'utf8', (err, data) => {
-                if (err) {
-                    this.emit('error', err);
-                    return;
-                }
+    private async startReadingLog(): Promise<void> {
+        const readline = require('readline');
+        const interval = 1000; // Interval for 60 times a second
+        const lineBuffer: string[] = [];
 
-                const messages = data.split('\n').filter(line => line.trim() !== '');
-                messages.forEach(message => {
-                    this.emit('message', message);
-                });
+        const readLog = async () => {
+            // console.log('READ LOG!', lineBuffer.length);
 
-                // Immediately read again to simulate continuous data
-                if (this.isConnected) {
-                    readLog();
+            const rl = readline.createInterface({
+                input: fs.createReadStream(this.logFilePath),
+                output: process.stdout,
+                terminal: false
+            });
+
+            rl.on('line', (line) => {
+                if (line.trim() !== '') {
+                    lineBuffer.push(line);
                 }
+            });
+
+            rl.on('close', () => {
+                // Done
             });
         };
 
-        readLog();
+        let timeOut: any;
+        const emitMessages = () => {
+            if (false === this.isConnected) {
+                clearInterval(timeOut);
+                return;
+            }
+
+            if (this.isConnected && lineBuffer.length > 0) {
+                this.emit('message', lineBuffer.shift());
+            }
+
+            if(this.isConnected && lineBuffer.length < 60) {
+                readLog();
+            }
+        };
+
+        await readLog(); // Start the initial log reading
+        setInterval(() => emitMessages(), interval); // Start emitting messages at the configured interval
     }
 
     public close(): void {

@@ -7,40 +7,35 @@ import VelocityMeter from '../race-components/velocity-meter'; // Use the earlie
 import GasBrakeMeter from '../race-components/gas-brake-meter'; // Placeholder for your gas/brake component
 import GForceMeter from '../race-components/gforce-meter';
 import RPMGauge from "../race-components/rpm-gauge";
-import NavBar from "../ui/top-bar"; // Placeholder for G forces
+import NavBar from "../ui/top-bar";
+import { MessageType } from "../../server/Message";
+import { GT7Data } from "../../server/Gt7Data";
+import ThrottleIndicator from "../race-components/throttle-indicator"; // Placeholder for G forces
 
 const Dashboard = () => {
-    const {
-        ws, messages, connect, sendMessage, onError
-    } = useSocket();
+    // const {subscribe, unsubscribe} = useSocket();
 
     const {
         velocity, setVelocity,
         gForces, setGForces,
-        gasBrakeUsage, setGasBrakeUsage
+        gasBrakeUsage, setGasBrakeUsage,
+        rpm, setRpm,
     } = useDashboard();
 
     useEffect(() => {
-        const socket = new WebSocket('ws://your-racing-data-stream-url');
-
-        socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            setVelocity(data.velocity);
-            setGForces(data.gForces);
-            setGasBrakeUsage({ gas: data.gas, brake: data.brake });
-        };
-
-        return () => {
-            socket.close();
-        };
-    }, [setVelocity, setGForces, setGasBrakeUsage]);
+        // subscribe(MessageType.data, (data: GT7Data) => {
+        //     setGasBrakeUsage({gas: data.throttle, brake: data.brake});
+        //     setRpm(data.engineRPM);
+        // })
+    }, [setVelocity, setGForces, setGasBrakeUsage, setRpm]);
 
     return (
         <div className="dashboard-container">
             <VelocityMeter velocity={velocity} />
             <GasBrakeMeter gas={gasBrakeUsage.gas} brake={gasBrakeUsage.brake} />
             <GForceMeter gForces={gForces} />
-            <RPMGauge rpm={4500} maxRPM={8000} />
+            <RPMGauge rpm={rpm} maxRPM={8000} />
+            <ThrottleIndicator />
             {/* You can add more metrics here */}
         </div>
     );

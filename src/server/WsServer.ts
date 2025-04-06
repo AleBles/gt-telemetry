@@ -19,7 +19,7 @@ const argv = yargs(hideBin(process.argv)).option('mode', {
     alias: 'l',
     description: 'Set the log file path for the MockServer',
     type: 'string',
-    default: null
+    default: undefined,
 }).argv;
 
 // Create WebSocket server
@@ -49,18 +49,10 @@ server.on("connection", (clientConnection) => {
 
                 console.log(`Connecting to PlayStation at ${host}`);
 
-                if (!psSocket) {
-                   //Only create PS socket when non existing, allowing the frontend to connect multiple times
-                    // Create a new UDP client
-                    psSocket.connect(host)
-                }
-
                 /**
                  * Pass the Data from the Ps5 to the frontend
                  */
                 psSocket.on("message", (msg: GT7Data) => {
-                    console.log(`Received UDP data: ${msg}`);
-
                     // Forward UDP data to the WebSocket client
                     if (clientConnection.readyState === clientConnection.OPEN) {
                         clientConnection.send(JSON.stringify({type:MessageType.data ,data:msg}));
@@ -70,7 +62,8 @@ server.on("connection", (clientConnection) => {
                 /**
                  * Once the PS5 is connected we will send it to the client
                  */
-                psSocket.on("connect", (err) => {
+                psSocket.on("connect", (...data) => {
+                    console.log("connected", data)
                     // Forward UDP data to the WebSocket client
                     if (clientConnection.readyState === clientConnection.OPEN) {
                         clientConnection.send(JSON.stringify({type: MessageType.connect, data: "We are connected!"}));
@@ -78,7 +71,7 @@ server.on("connection", (clientConnection) => {
                 })
 
                 psSocket.on("disconnect", (err) => {
-                    clientConnection.send(JSON.stringify({type: MessageType.error, data: "Playstation disconnected"}));
+                    clientConnection.send(JSON.stringify({type: MessageType.disconnect, data: "Playstation disconnected"}));
 
                     clientConnection.close();
                 })
@@ -88,6 +81,8 @@ server.on("connection", (clientConnection) => {
 
                     clientConnection.close();
                 });
+
+                psSocket.connect(host);
             }
         } catch (err) {
             console.error("Error processing message:", err);
@@ -98,7 +93,6 @@ server.on("connection", (clientConnection) => {
         console.log("WebSocket client disconnected.");
         if (psSocket) {
             psSocket.close();
-            psSocket = null;
         }
     });
 });

@@ -2,8 +2,8 @@ import { PlaystationSocket } from '../server/PlaystationSocket';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const psIp = '192.168.1.100'; // Replace with the actual IP address
-const logName = 'playstation_messages.log';
+const psIp = '192.168.0.111'; // Replace with the actual IP address
+const logName = '../../data/playstation_messages.log';
 
 // Create an instance of PlaystationSocket
 const playstationSocket = new PlaystationSocket();
@@ -16,7 +16,7 @@ fs.writeFileSync(logFilePath, '', { flag: 'a' });
 
 // Listen for messages from the PlaystationSocket
 playstationSocket.on('message', (message) => {
-    fs.appendFileSync(logFilePath, message);
+    fs.appendFileSync(logFilePath, JSON.stringify(message) + '\n');
 });
 
 // Handle connection events
