@@ -12,6 +12,8 @@ export class PlaystationSocket extends EventEmitter {
 
     private receivePort: number = 33739;
 
+    private serverIp: string;
+
     private timer: null | ReturnType<typeof setTimeout> = null
 
     constructor() {
@@ -69,23 +71,33 @@ export class PlaystationSocket extends EventEmitter {
     }
 
     public connect(playstationIp: string): void {
+        this.serverIp = playstationIp;
+
+        this.sendHeartBeat();
+
+        /**
+         * Since there is no acknowledgement on UDP we set a simple timeout after the initial message
+         * Once the timeout is hit we assume we can't connect, close the connection and throw an error
+         */
+        this.timer = setTimeout(() => {
+            this.emit('error', 'Unable to connect to Playstation')
+        }, 5000)
+
+        setInterval(() => {
+            this.sendHeartBeat();
+        }, 10000)
+    }
+
+    private sendHeartBeat(): void {
         // Send a tiny package, once the PS5 correcly receives it, it will start returning the data
-        this.socket?.send(Buffer.from('A'),0, 1, this.receivePort, playstationIp, (err) => {
+        this.socket?.send(Buffer.from('A'),0, 1, this.receivePort, this.serverIp, (err) => {
             if (err) {
                 this.socket.close();
                 this.emit('disconnect', err);
                 return;
             }
 
-            console.log('Init package send!');
-
-            /**
-             * Since there is no acknowledgement on UDP we set a simple timeout after the initial message
-             * Once the timeout is hit we assume we can't connect, close the connection and throw an error
-             */
-            this.timer = setTimeout(() => {
-                this.emit('error', 'Unable to connect to Playstation')
-            }, 5000)
+            console.log('Heartbeat send!');
         });
     }
 }

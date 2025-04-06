@@ -30,7 +30,7 @@ export class MockServer extends EventEmitter {
 
     private async startReadingLog(): Promise<void> {
         const readline = require('readline');
-        const interval = 1000; // Interval for 60 times a second
+        const interval = 1000 / 60; // Interval for 60 times a second
         const lineBuffer: string[] = [];
 
         const readLog = async () => {

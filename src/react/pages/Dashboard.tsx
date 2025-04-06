@@ -31,7 +31,7 @@ const Dashboard = () => {
 
     return (
         <div className="dashboard-container">
-            <VelocityMeter velocity={velocity} />
+            <VelocityMeter />
             <GasBrakeMeter gas={gasBrakeUsage.gas} brake={gasBrakeUsage.brake} />
             <GForceMeter gForces={gForces} />
             <RPMGauge rpm={rpm} maxRPM={8000} />
